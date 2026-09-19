@@ -1,0 +1,141 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PLATFORM_ADMIN
+  TENANT_USER
+}
+
+enum CampaignStatus {
+  DRAFT
+  LAUNCHED
+  COMPLETED
+}
+
+// Module: Auth & Tenants (Member 2)
+model Tenant {
+  id          String     @id @default(uuid())
+  name        String
+  domain      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  users       User[]
+  employees   Employee[]
+  campaigns   Campaign[]
+  policies    Policy[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(TENANT_USER)
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Employee {
+  id           String          @id @default(uuid())
+  email        String
+  firstName    String
+  lastName     String
+  tenantId     String
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaignLogs CampaignEmail[]
+  acks         PolicyAck[]
+  createdAt    DateTime        @default(now())
+
+  @@unique([tenantId, email])
+}
+
+// Module: Templates & Landing Pages (Member 3)
+model EmailTemplate {
+  id        String     @id @default(uuid())
+  name      String
+  subject   String
+  htmlBody  String
+  campaigns Campaign[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model LandingPage {
+  id          String     @id @default(uuid())
+  title       String
+  htmlContent String     // Educational debrief content
+  campaigns   Campaign[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// Module: Campaign Engine & Tracking (Member 1)
+model Campaign {
+  id            String          @id @default(uuid())
+  name          String
+  status        CampaignStatus  @default(DRAFT)
+  tenantId      String
+  tenant        Tenant          @relation(fields: [tenantId], references: [id])
+  templateId    String
+  template      EmailTemplate   @relation(fields: [templateId], references: [id])
+  landingPageId String
+  landingPage   LandingPage     @relation(fields: [landingPageId], references: [id])
+  senderName    String
+  senderEmail   String
+  emailsSent    CampaignEmail[]
+  createdAt     DateTime        @default(now())
+  launchedAt    DateTime?
+}
+
+model CampaignEmail {
+  id           String         @id @default(uuid())
+  trackingId   String         @unique @default(uuid()) // Used in tracked URLs
+  campaignId   String
+  campaign     Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  employeeId   String
+  employee     Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  openedAt     DateTime?
+  clickedAt    DateTime?
+  bouncedAt    DateTime?
+  trackingLogs TrackingEvent[]
+}
+
+model TrackingEvent {
+  id              String        @id @default(uuid())
+  campaignEmailId String
+  campaignEmail   CampaignEmail @relation(fields: [campaignEmailId], references: [id], onDelete: Cascade)
+  eventType       String        // "DELIVERY", "OPEN", "CLICK", "BOUNCE"
+  ipAddress       String?
+  userAgent       String?
+  timestamp       DateTime      @default(now())
+}
+
+// Module: Policies & Reporting (Member 4)
+model Policy {
+  id          String      @id @default(uuid())
+  tenantId    String
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title       String
+  content     String
+  createdAt   DateTime    @default(now())
+  acks        PolicyAck[]
+}
+
+model PolicyAck {
+  id          String    @id @default(uuid())
+  policyId    String
+  policy      Policy    @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  acknowledgedAt DateTime @default(now())
+
+  @@unique([policyId, employeeId])
+}
