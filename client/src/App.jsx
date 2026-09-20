@@ -8,13 +8,14 @@ import CampaignBuilder from './pages/admin/CampaignBuilder';
 import CampaignResults from './pages/admin/CampaignResults';
 import TemplatesList from './pages/admin/TemplatesList';
 import CampaignsList from './pages/admin/CampaignsList';
-import TenantsList from './pages/admin/TenantsList';
 import EmployeesList from './pages/admin/EmployeesList';
 import LandingPagesList from './pages/admin/LandingPagesList';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import TenantsManager from './pages/admin/TenantsManager'; // Replaces TenantsList
 
-// Temporary placeholders
-const AdminDashboard = () => <div className="p-8">Admin Dashboard Overview</div>;
-const TenantDashboard = () => <div className="p-8">Tenant User Dashboard</div>;
+import TenantDashboard from './pages/tenant/TenantDashboard';
+
+// Temporary placeholder
 const PoliciesList = () => <div className="p-8">Policies (Coming Soon)</div>;
 
 function App() {
@@ -31,26 +32,23 @@ function App() {
             </RequireRole>
           }>
             <Route index element={<AdminDashboard />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="campaigns/new" element={<CampaignBuilder />} />
             <Route path="campaigns/:id" element={<CampaignResults />} />
-            
-            <Route path="tenants" element={<TenantsList />} />
+            <Route path="tenants" element={<TenantsManager />} /> {/* Fixed duplicate route */}
             <Route path="tenants/:id/employees" element={<EmployeesList />} />
             <Route path="templates" element={<TemplatesList />} />
             <Route path="landing-pages" element={<LandingPagesList />} />
             <Route path="campaigns" element={<CampaignsList />} />
             <Route path="policies" element={<PoliciesList />} />
-        </Route>
+          </Route>
 
           {/* TENANT USER ROUTES */}
           <Route path="/tenant" element={
             <RequireRole role="TENANT_USER">
-              {/* <TenantLayout /> will go here later */}
               <TenantDashboard />
             </RequireRole>
-          }>
-            {/* Tenant routes will inject here */}
-          </Route>
+          } />
 
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

@@ -26,12 +26,16 @@ const tenantRoutes = require('./src/routes/tenants');
 //Member3: Landing page Routes
 const landingPageRoutes = require('./src/routes/landingPages');
 
+//Member4: Tenant Dashboard and Tenant account creation
+const tenantPortalRoutes = require('./src/routes/tenantPortal');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/track', trackingRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/landing-pages', landingPageRoutes);
 app.use('/api/tenants', tenantRoutes);
+app.use('/api/tenant-portal', tenantPortalRoutes);
 
 // Port configuration
 const PORT = process.env.PORT || 5000;

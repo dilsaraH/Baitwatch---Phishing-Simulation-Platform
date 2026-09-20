@@ -15,7 +15,6 @@ const getPageTitle = (pathname) => {
   if (pathname.startsWith('/admin/tenants')) return 'Tenants';
   if (pathname.startsWith('/admin/templates')) return 'Email Templates';
   if (pathname.startsWith('/admin/landing-pages')) return 'Landing Pages';
-  if (pathname.startsWith('/admin/policies')) return 'Policies';
   return 'BaitWatch Admin';
 };
 
@@ -38,7 +37,6 @@ export default function AdminLayout() {
     { to: '/admin/templates', label: 'Email Templates', icon: FileText },
     { to: '/admin/landing-pages', label: 'Landing Pages', icon: LayoutTemplate },
     { to: '/admin/campaigns', label: 'Campaigns', icon: Rocket },
-    { to: '/admin/policies', label: 'Policies', icon: Shield },
   ];
 
   return (

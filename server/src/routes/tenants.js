@@ -1,5 +1,6 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt'); 
 const { authenticateToken, requireRole } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -15,7 +16,11 @@ router.get('/', async (req, res) => {
     const tenants = await prisma.tenant.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        _count: { select: { employees: true, campaigns: true } }
+        _count: { select: { employees: true, campaigns: true } },
+        // Included users so the Admin UI can display existing portal accounts
+        users: { select: { id: true, email: true, createdAt: true } },
+        // Included employees to support tenant.employees.length in the UI
+        employees: { select: { id: true } } 
       }
     });
     res.json(tenants);
@@ -38,6 +43,36 @@ router.post('/', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create tenant (Domain might already exist)' });
+  }
+});
+
+// POST /api/tenants/:id/users - Create a Tenant Portal Login Account
+router.post('/:id/users', async (req, res) => {
+  const { email, password } = req.body;
+  const tenantId = req.params.id;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        role: 'TENANT_USER',
+        tenantId
+      }
+    });
+
+    // Remove the hashed password before sending the response back to the frontend
+    delete user.password;
+    res.status(201).json(user);
+  } catch (err) {
+    console.error("User creation error:", err);
+    res.status(500).json({ error: "Failed to create user account. Email might already exist." });
   }
 });
 
